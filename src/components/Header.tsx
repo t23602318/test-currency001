@@ -10,7 +10,7 @@ export const Header = () => {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-3">
             <ClipboardList className="w-8 h-8" />
-            <h1 className="text-xl font-bold">需求收集管理系统</h1>
+            <h1 className="text-xl font-bold">货币大全</h1>
           </div>
           
           <nav className="flex items-center gap-4">
