@@ -37,7 +37,7 @@
     @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     .animate-fadeIn { animation: fadeIn 0.3s ease-out; }
     .animate-scaleIn { animation: scaleIn 0.3s ease-out; }
-    .animate-slideUp { animation: slideUp 0.4s ease-out; }
+    .animate-slideUp { animation: slideIn 0.4s ease-out; }
     .card-hover:hover { transform: translateY(-4px); }
     .card-hover { transition: all 0.3s ease; }
   </style>
@@ -147,7 +147,7 @@
       return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgContent)));
     };
 
-    // 36种货币数据
+    // 扩展的全球主流货币数据
     const initialCurrencies = [
       { id: '1', name: '美元', code: 'USD', faceValue: '100', version: '2004系列（彩色优化版）', circulationStatus: '正常流通', ctripAccept: '允许收兑' },
       { id: '2', name: '美元', code: 'USD', faceValue: '50', version: '2004系列（彩色优化版）', circulationStatus: '正常流通', ctripAccept: '允许收兑' },
@@ -194,7 +194,7 @@
       backImage: generateBackPlaceholderImage(c),
     }));
 
-    const getUniqueValues = (arr, key) => ['请选择', ...new Set(arr.map(c => c[key]))];
+    const getUniqueValues = (arr, key) => ['', ...new Set(arr.map(c => c[key]))];
 
     const Header = ({ title }) => (
       <header className="bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg">
@@ -392,7 +392,7 @@
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
-                <h2 className="text-xl font-bold text-gray-900">编辑货币信息</h2>
+                <h2 className="text-xl font-bold text-gray-900">{currency.id ? '编辑货币信息' : '新增货币'}</h2>
               </div>
             </div>
 
@@ -520,7 +520,7 @@
                   type="submit"
                   className="px-6 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
                 >
-                  保存修改
+                  保存
                 </button>
               </div>
             </form>
@@ -543,8 +543,8 @@
             { key: 'code', label: '币种代码', options: getUniqueValues(currencies, 'code') },
             { key: 'faceValue', label: '票面金额', options: getUniqueValues(currencies, 'faceValue') },
             { key: 'version', label: '版本', options: getUniqueValues(currencies, 'version') },
-            { key: 'circulationStatus', label: '流通状态', options: ['请选择', '正常流通', '停止流通'] },
-            { key: 'ctripAccept', label: '携程收兑', options: ['请选择', '允许收兑', ''] },
+            { key: 'circulationStatus', label: '流通状态', options: ['', '正常流通', '停止流通'] },
+            { key: 'ctripAccept', label: '携程收兑', options: ['', '允许收兑', ''] },
           ].map(filter => (
             <div key={filter.key}>
               <label className="block text-sm font-medium text-gray-700 mb-2">{filter.label}</label>
@@ -554,7 +554,7 @@
                 className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
               >
                 {filter.options.map(opt => (
-                  <option key={opt} value={opt}>{opt}</option>
+                  <option key={opt} value={opt}>{opt || '请选择'}</option>
                 ))}
               </select>
             </div>
@@ -563,11 +563,11 @@
       </div>
     );
 
-    const AdminTable = ({ currencies, onView, onEdit }) => (
+    const AdminTable = ({ currencies, onView, onEdit, onDelete, onAdd }) => (
       <div className="bg-white rounded-xl shadow-card border border-gray-100 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
           <h3 className="font-semibold text-gray-900">数据管理</h3>
-          <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium flex items-center gap-2">
+          <button onClick={onAdd} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium flex items-center gap-2">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>
@@ -629,7 +629,7 @@
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
                       </button>
-                      <button className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="删除">
+                      <button onClick={() => onDelete(currency.id)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="删除">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
@@ -648,20 +648,21 @@
       const [currentPage, setCurrentPage] = useState('home');
       const [currenciesState, setCurrenciesState] = useState(currencies);
       const [filters, setFilters] = useState({
-        name: '请选择', code: '请选择', faceValue: '请选择',
-        version: '请选择', circulationStatus: '请选择', ctripAccept: '请选择',
+        name: '', code: '', faceValue: '',
+        version: '', circulationStatus: '', ctripAccept: '',
       });
       const [selectedCurrency, setSelectedCurrency] = useState(null);
       const [editingCurrency, setEditingCurrency] = useState(null);
+      const [isAddingNew, setIsAddingNew] = useState(false);
 
       const filteredCurrencies = useMemo(() => {
         return currenciesState.filter(currency => {
-          if (filters.name !== '请选择' && currency.name !== filters.name) return false;
-          if (filters.code !== '请选择' && currency.code !== filters.code) return false;
-          if (filters.faceValue !== '请选择' && currency.faceValue !== filters.faceValue) return false;
-          if (filters.version !== '请选择' && currency.version !== filters.version) return false;
-          if (filters.circulationStatus !== '请选择' && currency.circulationStatus !== filters.circulationStatus) return false;
-          if (filters.ctripAccept !== '请选择' && currency.ctripAccept !== filters.ctripAccept) return false;
+          if (filters.name && !currency.name.includes(filters.name)) return false;
+          if (filters.code && !currency.code.toLowerCase().includes(filters.code.toLowerCase())) return false;
+          if (filters.faceValue && !currency.faceValue.includes(filters.faceValue)) return false;
+          if (filters.version && !currency.version.includes(filters.version)) return false;
+          if (filters.circulationStatus && currency.circulationStatus !== filters.circulationStatus) return false;
+          if (filters.ctripAccept && currency.ctripAccept !== filters.ctripAccept) return false;
           return true;
         });
       }, [currenciesState, filters]);
@@ -669,10 +670,43 @@
       const handleFilterChange = (key, value) => setFilters(prev => ({ ...prev, [key]: value }));
 
       const handleSaveCurrency = (updatedCurrency) => {
-        setCurrenciesState(prevCurrencies => 
-          prevCurrencies.map(c => c.id === updatedCurrency.id ? updatedCurrency : c)
-        );
-        alert('货币信息已保存！');
+        if (updatedCurrency.id) {
+          setCurrenciesState(prevCurrencies => 
+            prevCurrencies.map(c => c.id === updatedCurrency.id ? updatedCurrency : c)
+          );
+          alert('货币信息已保存！');
+        } else {
+          const newCurrency = {
+            ...updatedCurrency,
+            id: Date.now().toString(),
+            frontImage: generatePlaceholderImage(updatedCurrency),
+            backImage: generateBackPlaceholderImage(updatedCurrency),
+          };
+          setCurrenciesState(prevCurrencies => [...prevCurrencies, newCurrency]);
+          alert('货币已添加！');
+        }
+      };
+
+      const handleDeleteCurrency = (id) => {
+        if (window.confirm('确定要删除这条货币记录吗？')) {
+          setCurrenciesState(prevCurrencies => prevCurrencies.filter(c => c.id !== id));
+          alert('货币已删除！');
+        }
+      };
+
+      const handleAddNew = () => {
+        setIsAddingNew(true);
+        setEditingCurrency({
+          id: null,
+          name: '',
+          code: '',
+          faceValue: '',
+          version: '',
+          circulationStatus: '正常流通',
+          ctripAccept: '',
+          frontImage: '',
+          backImage: '',
+        });
       };
 
       return (
@@ -687,12 +721,6 @@
                     </svg>
                   </div>
                   <h1 className="text-4xl font-bold text-gray-900 mb-4">货币大全</h1>
-                  <p className="text-gray-500 text-lg max-w-2xl mx-auto">携程外币兑换业务支持系统 - 快速查询全球货币信息</p>
-                  <div className="mt-6 inline-block bg-blue-50 border border-blue-200 rounded-lg px-6 py-3">
-                    <p className="text-blue-800 text-sm">
-                      💡 <strong>提示：</strong>在数据管理页面点击"编辑"按钮，可以上传您自己的货币图片
-                    </p>
-                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-slideUp" style={{ animationDelay: '0.1s' }}>
@@ -768,47 +796,51 @@
 
                 <FilterSection filters={filters} onFilterChange={handleFilterChange} currencies={currenciesState} />
 
-                <div className="bg-white rounded-xl shadow-card border border-gray-100 mt-6 overflow-hidden">
-                  <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className="font-semibold text-gray-900">查询结果</span>
-                      <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
-                        {filteredCurrencies.length} 条记录
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="p-6">
-                    {filteredCurrencies.length === 0 ? (
-                      <div className="text-center py-16">
-                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                          <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                        </div>
-                        <p className="text-gray-500">暂无匹配的货币数据</p>
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        {filteredCurrencies.map(currency => (
-                          <CurrencyCard 
-                            key={currency.id} 
-                            currency={currency} 
-                            onClick={setSelectedCurrency}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
                 {currentPage === 'admin' && (
                   <div className="mt-6 animate-slideUp">
                     <AdminTable 
                       currencies={filteredCurrencies} 
                       onView={setSelectedCurrency}
                       onEdit={setEditingCurrency}
+                      onDelete={handleDeleteCurrency}
+                      onAdd={handleAddNew}
                     />
+                  </div>
+                )}
+
+                {currentPage === 'query' && (
+                  <div className="bg-white rounded-xl shadow-card border border-gray-100 mt-6 overflow-hidden">
+                    <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className="font-semibold text-gray-900">查询结果</span>
+                        <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+                          {filteredCurrencies.length} 条记录
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="p-6">
+                      {filteredCurrencies.length === 0 ? (
+                        <div className="text-center py-16">
+                          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          </div>
+                          <p className="text-gray-500">暂无匹配的货币数据</p>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                          {filteredCurrencies.map(currency => (
+                            <CurrencyCard 
+                              key={currency.id} 
+                              currency={currency} 
+                              onClick={setSelectedCurrency}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
@@ -822,10 +854,13 @@
             />
           )}
 
-          {editingCurrency && (
+          {(editingCurrency || isAddingNew) && (
             <CurrencyEditModal 
               currency={editingCurrency}
-              onClose={() => setEditingCurrency(null)}
+              onClose={() => {
+                setEditingCurrency(null);
+                setIsAddingNew(false);
+              }}
               onSave={handleSaveCurrency}
             />
           )}
