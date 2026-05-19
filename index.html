@@ -18,14 +18,14 @@
               400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8',
               800: '#1e40af', 900: '#1e3a8a',
             },
-          },
-          boxShadow: {
-            'soft': '0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04)',
-            'card': '0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06)',
-            'card-hover': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-          },
-        },
-      },
+            business: {
+              50: '#f8fafc', 100: '#f1f5f9', 200: '#e2e8f0', 300: '#cbd5e1',
+              400: '#94a3b8', 500: '#64748b', 600: '#475569', 700: '#334155',
+              800: '#1e293b', 900: '#0f172a',
+            }
+          }
+        }
+      }
     }
   </script>
   <style>
@@ -37,183 +37,160 @@
     @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     .animate-fadeIn { animation: fadeIn 0.3s ease-out; }
     .animate-scaleIn { animation: scaleIn 0.3s ease-out; }
-    .animate-slideUp { animation: slideIn 0.4s ease-out; }
-    .card-hover:hover { transform: translateY(-4px); }
-    .card-hover { transition: all 0.3s ease; }
+    .card-hover:hover { transform: translateY(-6px); }
+    .card-hover { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    .gradient-primary {
+      background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #3b82f6 100%);
+    }
+    .gradient-gold {
+      background: linear-gradient(135deg, #d4a84b 0%, #f59e0b 50%, #d97706 100%);
+    }
+    .text-gradient-gold {
+      background: linear-gradient(135deg, #d4a84b 0%, #f59e0b 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
   </style>
 </head>
-<body class="bg-gray-50">
+<body class="bg-gradient-to-br from-slate-50 via-white to-slate-100">
   <div id="root"></div>
   <script type="text/babel">
-    const { useState, useMemo, useRef } = React;
+    const { useState, useMemo, useRef, useEffect } = React;
 
-    // 生成专业货币占位图
-    const generatePlaceholderImage = (currency) => {
-      const { name, code, faceValue } = currency;
-      const colors = {
-        'USD': { bg: '#1a365d', text: '#ffd700', accent: '#1e4a7d' },
-        'EUR': { bg: '#003399', text: '#ffcc00', accent: '#1a4db3' },
-        'JPY': { bg: '#bc002d', text: '#ffffff', accent: '#d10035' },
-        'GBP': { bg: '#012169', text: '#c8102e', accent: '#1a3480' },
-        'CNY': { bg: '#de2910', text: '#ffde00', accent: '#e63946' },
-        'HKD': { bg: '#de3831', text: '#ffffff', accent: '#c62828' },
-        'AUD': { bg: '#00008b', text: '#ffd700', accent: '#1a1a8b' },
-        'CAD': { bg: '#ff0000', text: '#ffffff', accent: '#cc0000' },
-        'CHF': { bg: '#ff0000', text: '#ffffff', accent: '#cc0000' },
-        'SGD': { bg: '#ed2939', text: '#ffffff', accent: '#c62828' },
-        'KRW': { bg: '#0047a0', text: '#ffffff', accent: '#003080' },
-        'THB': { bg: '#a51931', text: '#f4f5fb', accent: '#8c1428' },
-        'INR': { bg: '#ff9933', text: '#000080', accent: '#cc7a29' },
-        'AED': { bg: '#00732f', text: '#ffffff', accent: '#006624' },
-        'SAR': { bg: '#006c35', text: '#ffffff', accent: '#005c2e' },
-        'MYR': { bg: '#cc0001', text: '#ffffff', accent: '#a30000' },
-        'IDR': { bg: '#ff0000', text: '#ffffff', accent: '#cc0000' },
-        'PHP': { bg: '#0038a8', text: '#f5b912', accent: '#002d85' },
-        'NZD': { bg: '#00247d', text: '#ffffff', accent: '#001f6b' },
-        'NOK': { bg: '#ef2b2d', text: '#ffffff', accent: '#cc2426' },
-        'SEK': { bg: '#006aa7', text: '#fecc00', accent: '#00558f' },
-      };
-      
-      const colorScheme = colors[code] || { bg: '#374151', text: '#ffffff', accent: '#4b5563' };
-      
-      const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="440" height="220" viewBox="0 0 440 220">
-        <defs>
-          <linearGradient id="grad_${code}" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" style="stop-color:${colorScheme.bg}"/>
-            <stop offset="100%" style="stop-color:${colorScheme.accent}"/>
-          </linearGradient>
-        </defs>
-        <rect width="440" height="220" fill="url(#grad_${code})"/>
-        <rect x="15" y="15" width="410" height="190" fill="none" stroke="${colorScheme.text}" stroke-width="3" rx="10"/>
-        <rect x="25" y="25" width="390" height="170" fill="none" stroke="${colorScheme.text}" stroke-width="1" rx="5" opacity="0.5"/>
-        <text x="220" y="95" text-anchor="middle" font-family="Arial, sans-serif" font-size="60" font-weight="bold" fill="${colorScheme.text}">${faceValue}</text>
-        <text x="220" y="135" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" fill="${colorScheme.text}" opacity="0.9">${code}</text>
-        <text x="220" y="170" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" fill="${colorScheme.text}" opacity="0.7">${name}</text>
-        <circle cx="60" cy="110" r="20" fill="none" stroke="${colorScheme.text}" stroke-width="2" opacity="0.4"/>
-        <circle cx="380" cy="110" r="20" fill="none" stroke="${colorScheme.text}" stroke-width="2" opacity="0.4"/>
-      </svg>`;
-      
-      return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgContent)));
+    // 组合筛选组件 - 支持手动选择和模糊搜索
+    const ComboboxFilter = ({ label, value, onChange, options, placeholder }) => {
+      const [isOpen, setIsOpen] = useState(false);
+      const [searchTerm, setSearchTerm] = useState('');
+      const wrapperRef = useRef(null);
+
+      useEffect(() => {
+        const handleClickOutside = (event) => {
+          if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+            setIsOpen(false);
+          }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+      }, []);
+
+      const filteredOptions = options.filter(opt => 
+        opt.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+
+      const displayValue = value || (isOpen ? searchTerm : '');
+
+      return (
+        <div ref={wrapperRef} className="relative">
+          <label className="block text-sm font-medium text-gray-700 mb-2">{label}</label>
+          <div 
+            className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm cursor-pointer hover:border-primary-400 transition-colors flex items-center justify-between"
+            onClick={() => setIsOpen(!isOpen)}
+          >
+            <span className={value ? 'text-gray-900' : 'text-gray-400'}>
+              {value || placeholder}
+            </span>
+            <svg className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+          
+          {isOpen && (
+            <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden animate-scaleIn">
+              <div className="p-2 border-b border-gray-100">
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder={`搜索${label}...`}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  autoFocus
+                />
+              </div>
+              <div className="max-h-60 overflow-y-auto">
+                <div 
+                  className="px-3 py-2 text-sm text-gray-500 hover:bg-gray-50 cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onChange('');
+                    setSearchTerm('');
+                    setIsOpen(false);
+                  }}
+                >
+                  清空选择
+                </div>
+                {filteredOptions.length === 0 ? (
+                  <div className="px-3 py-2 text-sm text-gray-400">无匹配结果</div>
+                ) : (
+                  filteredOptions.map((opt, idx) => (
+                    <div
+                      key={idx}
+                      className={`px-3 py-2 text-sm cursor-pointer hover:bg-primary-50 ${
+                        value === opt ? 'bg-primary-50 text-primary-600 font-medium' : 'text-gray-700'
+                      }`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onChange(opt);
+                        setSearchTerm('');
+                        setIsOpen(false);
+                      }}
+                    >
+                      {opt}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      );
     };
 
-    const generateBackPlaceholderImage = (currency) => {
-      const { name, code, faceValue } = currency;
-      const colorScheme = {
-        'USD': { bg: '#1e3a5f', text: '#ffd700', accent: '#162d4d' },
-        'EUR': { bg: '#1a4db3', text: '#ffcc00', accent: '#153d8f' },
-        'JPY': { bg: '#3d3d3d', text: '#ffffff', accent: '#2d2d2d' },
-        'GBP': { bg: '#1a3480', text: '#c8102e', accent: '#142a6b' },
-        'CNY': { bg: '#2d5a27', text: '#ffde00', accent: '#234a1f' },
-        'HKD': { bg: '#1a4a6e', text: '#ffffff', accent: '#153c5c' },
-        'AUD': { bg: '#1a5a1a', text: '#ffd700', accent: '#144a14' },
-        'CAD': { bg: '#1a4a6e', text: '#ffffff', accent: '#153c5c' },
-        'CHF': { bg: '#3d3d3d', text: '#ffffff', accent: '#2d2d2d' },
-        'SGD': { bg: '#2d5a27', text: '#ffffff', accent: '#234a1f' },
-        'KRW': { bg: '#1a3d6e', text: '#ffffff', accent: '#153058' },
-        'THB': { bg: '#2d3a5a', text: '#a51931', accent: '#242e48' },
-        'INR': { bg: '#138808', text: '#ff9933', accent: '#106806' },
-        'AED': { bg: '#1a5a27', text: '#ffffff', accent: '#154a1f' },
-        'SAR': { bg: '#3d3d3d', text: '#ffffff', accent: '#2d2d2d' },
-        'MYR': { bg: '#1a4a6e', text: '#ffd700', accent: '#153c5c' },
-        'IDR': { bg: '#3d3d3d', text: '#ffffff', accent: '#2d2d2d' },
-        'PHP': { bg: '#1a4d6e', text: '#f5b912', accent: '#153f5c' },
-        'NZD': { bg: '#1a4a6e', text: '#cc142b', accent: '#153c5c' },
-        'NOK': { bg: '#3d3d3d', text: '#ffffff', accent: '#2d2d2d' },
-        'SEK': { bg: '#1a4d6e', text: '#fecc00', accent: '#153f5c' },
-      }[code] || { bg: '#374151', text: '#ffffff', accent: '#2d3748' };
-      
-      const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="440" height="220" viewBox="0 0 440 220">
-        <defs>
-          <linearGradient id="gradBack_${code}" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" style="stop-color:${colorScheme.bg}"/>
-            <stop offset="100%" style="stop-color:${colorScheme.accent}"/>
-          </linearGradient>
-        </defs>
-        <rect width="440" height="220" fill="url(#gradBack_${code})"/>
-        <rect x="15" y="15" width="410" height="190" fill="none" stroke="${colorScheme.text}" stroke-width="3" rx="10"/>
-        <rect x="25" y="25" width="390" height="170" fill="none" stroke="${colorScheme.text}" stroke-width="1" rx="5" opacity="0.5"/>
-        <rect x="70" y="50" width="300" height="100" fill="none" stroke="${colorScheme.text}" stroke-width="2" rx="5" opacity="0.4"/>
-        <line x1="70" y1="75" x2="370" y2="75" stroke="${colorScheme.text}" stroke-width="1" opacity="0.2"/>
-        <line x1="70" y1="100" x2="370" y2="100" stroke="${colorScheme.text}" stroke-width="1" opacity="0.2"/>
-        <line x1="70" y1="125" x2="370" y2="125" stroke="${colorScheme.text}" stroke-width="1" opacity="0.2"/>
-        <text x="220" y="185" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="${colorScheme.text}" opacity="0.9">${code} - ${faceValue}</text>
-        <text x="220" y="205" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="${colorScheme.text}" opacity="0.6">${name} BACK</text>
-        <circle cx="60" cy="60" r="15" fill="none" stroke="${colorScheme.text}" stroke-width="1.5" opacity="0.3"/>
-        <circle cx="380" cy="60" r="15" fill="none" stroke="${colorScheme.text}" stroke-width="1.5" opacity="0.3"/>
-        <circle cx="60" cy="160" r="15" fill="none" stroke="${colorScheme.text}" stroke-width="1.5" opacity="0.3"/>
-        <circle cx="380" cy="160" r="15" fill="none" stroke="${colorScheme.text}" stroke-width="1.5" opacity="0.3"/>
-      </svg>`;
-      
-      return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgContent)));
-    };
-
-    // 扩展的全球主流货币数据
+    // 扩展的全球主流货币数据（真实版本）
     const initialCurrencies = [
-      { id: '1', name: '美元', code: 'USD', faceValue: '100', version: '2004系列（彩色优化版）', circulationStatus: '正常流通', ctripAccept: '允许收兑' },
-      { id: '2', name: '美元', code: 'USD', faceValue: '50', version: '2004系列（彩色优化版）', circulationStatus: '正常流通', ctripAccept: '允许收兑' },
-      { id: '3', name: '美元', code: 'USD', faceValue: '20', version: '2004系列（彩色优化版）', circulationStatus: '正常流通', ctripAccept: '允许收兑' },
-      { id: '4', name: '欧元', code: 'EUR', faceValue: '200', version: '欧罗巴系列II（2019）', circulationStatus: '正常流通', ctripAccept: '允许收兑' },
-      { id: '5', name: '欧元', code: 'EUR', faceValue: '100', version: '欧罗巴系列II（2019）', circulationStatus: '正常流通', ctripAccept: '允许收兑' },
-      { id: '6', name: '欧元', code: 'EUR', faceValue: '50', version: '欧罗巴系列II（2017）', circulationStatus: '正常流通', ctripAccept: '允许收兑' },
-      { id: '7', name: '日元', code: 'JPY', faceValue: '10000', version: 'E系列（2024）', circulationStatus: '正常流通', ctripAccept: '允许收兑' },
-      { id: '8', name: '日元', code: 'JPY', faceValue: '5000', version: 'E系列（2024）', circulationStatus: '正常流通', ctripAccept: '允许收兑' },
-      { id: '9', name: '英镑', code: 'GBP', faceValue: '50', version: 'F系列（2020）', circulationStatus: '正常流通', ctripAccept: '允许收兑' },
-      { id: '10', name: '英镑', code: 'GBP', faceValue: '20', version: 'F系列（2020）', circulationStatus: '正常流通', ctripAccept: '允许收兑' },
-      { id: '11', name: '人民币', code: 'CNY', faceValue: '100', version: '第五套（2015版）', circulationStatus: '正常流通', ctripAccept: '允许收兑' },
-      { id: '12', name: '人民币', code: 'CNY', faceValue: '50', version: '第五套（2019版）', circulationStatus: '正常流通', ctripAccept: '允许收兑' },
-      { id: '13', name: '港币', code: 'HKD', faceValue: '1000', version: '2020系列（汇丰）', circulationStatus: '正常流通', ctripAccept: '允许收兑' },
-      { id: '14', name: '港币', code: 'HKD', faceValue: '500', version: '2018系列（渣打）', circulationStatus: '正常流通', ctripAccept: '允许收兑' },
-      { id: '15', name: '澳元', code: 'AUD', faceValue: '100', version: '第五系列（2019）', circulationStatus: '正常流通', ctripAccept: '' },
-      { id: '16', name: '澳元', code: 'AUD', faceValue: '50', version: '第五系列（2018）', circulationStatus: '正常流通', ctripAccept: '' },
-      { id: '17', name: '加元', code: 'CAD', faceValue: '100', version: '2011聚合物系列', circulationStatus: '正常流通', ctripAccept: '' },
-      { id: '18', name: '加元', code: 'CAD', faceValue: '50', version: '2012聚合物系列', circulationStatus: '正常流通', ctripAccept: '' },
-      { id: '19', name: '瑞士法郎', code: 'CHF', faceValue: '100', version: '第九系列（2010）', circulationStatus: '正常流通', ctripAccept: '' },
-      { id: '20', name: '瑞士法郎', code: 'CHF', faceValue: '50', version: '第九系列（2009）', circulationStatus: '正常流通', ctripAccept: '' },
-      { id: '21', name: '新加坡元', code: 'SGD', faceValue: '100', version: '第四系列（2014）', circulationStatus: '正常流通', ctripAccept: '' },
-      { id: '22', name: '新加坡元', code: 'SGD', faceValue: '50', version: '第四系列（2014）', circulationStatus: '正常流通', ctripAccept: '' },
-      { id: '23', name: '韩元', code: 'KRW', faceValue: '10000', version: '2007系列', circulationStatus: '正常流通', ctripAccept: '' },
-      { id: '24', name: '韩元', code: 'KRW', faceValue: '5000', version: '2006系列', circulationStatus: '正常流通', ctripAccept: '' },
-      { id: '25', name: '泰铢', code: 'THB', faceValue: '1000', version: '第十六系列（2018）', circulationStatus: '正常流通', ctripAccept: '' },
-      { id: '26', name: '泰铢', code: 'THB', faceValue: '500', version: '第十六系列（2018）', circulationStatus: '正常流通', ctripAccept: '' },
-      { id: '27', name: '印度卢比', code: 'INR', faceValue: '2000', version: '圣雄甘地系列（2016）', circulationStatus: '正常流通', ctripAccept: '' },
-      { id: '28', name: '印度卢比', code: 'INR', faceValue: '500', version: '圣雄甘地系列（2016）', circulationStatus: '正常流通', ctripAccept: '' },
-      { id: '29', name: '阿联酋迪拉姆', code: 'AED', faceValue: '1000', version: '2018系列', circulationStatus: '正常流通', ctripAccept: '' },
-      { id: '30', name: '沙特里亚尔', code: 'SAR', faceValue: '500', version: '2020系列', circulationStatus: '正常流通', ctripAccept: '' },
-      { id: '31', name: '马来西亚林吉特', code: 'MYR', faceValue: '100', version: '第六系列（2012）', circulationStatus: '正常流通', ctripAccept: '' },
-      { id: '32', name: '印尼卢比', code: 'IDR', faceValue: '100000', version: '2016系列', circulationStatus: '正常流通', ctripAccept: '' },
-      { id: '33', name: '菲律宾比索', code: 'PHP', faceValue: '1000', version: '新世代系列（2020）', circulationStatus: '正常流通', ctripAccept: '' },
-      { id: '34', name: '新西兰元', code: 'NZD', faceValue: '100', version: '第五系列（2015）', circulationStatus: '正常流通', ctripAccept: '' },
-      { id: '35', name: '挪威克朗', code: 'NOK', faceValue: '1000', version: '2017系列', circulationStatus: '正常流通', ctripAccept: '' },
-      { id: '36', name: '瑞典克朗', code: 'SEK', faceValue: '1000', version: '2015系列', circulationStatus: '正常流通', ctripAccept: '' },
+      { id: '1', name: '美元', code: 'USD', faceValue: '100', version: '2004系列', circulationStatus: '正常流通', ctripAccept: '允许收兑', frontImage: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/07/United_States_100_dollar_note_series_2009.jpg/440px-United_States_100_dollar_note_series_2009.jpg', backImage: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/United_States_100_dollar_note_series_2009_back.jpg/440px-United_States_100_dollar_note_series_2009_back.jpg' },
+      { id: '2', name: '美元', code: 'USD', faceValue: '50', version: '2004系列', circulationStatus: '正常流通', ctripAccept: '允许收兑', frontImage: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/United_States_50_dollar_note_series_2004.jpg/440px-United_States_50_dollar_note_series_2004.jpg', backImage: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/United_States_50_dollar_note_series_2004_back.jpg/440px-United_States_50_dollar_note_series_2004_back.jpg' },
+      { id: '3', name: '美元', code: 'USD', faceValue: '20', version: '2004系列', circulationStatus: '正常流通', ctripAccept: '允许收兑', frontImage: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6a/United_States_20_dollar_note_series_2004.jpg/440px-United_States_20_dollar_note_series_2004.jpg', backImage: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/United_States_20_dollar_note_series_2004_back.jpg/440px-United_States_20_dollar_note_series_2004_back.jpg' },
+      { id: '4', name: '欧元', code: 'EUR', faceValue: '100', version: '欧罗巴系列', circulationStatus: '正常流通', ctripAccept: '允许收兑', frontImage: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/Europa_100_euro_note.jpg/440px-Europa_100_euro_note.jpg', backImage: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/Europa_100_euro_note_back.jpg/440px-Europa_100_euro_note_back.jpg' },
+      { id: '5', name: '欧元', code: 'EUR', faceValue: '50', version: '欧罗巴系列', circulationStatus: '正常流通', ctripAccept: '允许收兑', frontImage: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/Europa_50_euro_note.jpg/440px-Europa_50_euro_note.jpg', backImage: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Europa_50_euro_note_back.jpg/440px-Europa_50_euro_note_back.jpg' },
+      { id: '6', name: '日元', code: 'JPY', faceValue: '10000', version: 'E系列', circulationStatus: '正常流通', ctripAccept: '允许收兑', frontImage: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Japanese_10000_yen_note_%28Series_E%29.jpg/440px-Japanese_10000_yen_note_%28Series_E%29.jpg', backImage: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Japanese_10000_yen_note_%28Series_E%29_reverse.jpg/440px-Japanese_10000_yen_note_%28Series_E%29_reverse.jpg' },
+      { id: '7', name: '英镑', code: 'GBP', faceValue: '50', version: 'F系列', circulationStatus: '正常流通', ctripAccept: '允许收兑', frontImage: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/UK_50_pound_note.jpg/440px-UK_50_pound_note.jpg', backImage: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/UK_50_pound_note_back.jpg/440px-UK_50_pound_note_back.jpg' },
+      { id: '8', name: '人民币', code: 'CNY', faceValue: '100', version: '第五套2015版', circulationStatus: '正常流通', ctripAccept: '允许收兑', frontImage: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/100_Yuan_Note.jpg/440px-100_Yuan_Note.jpg', backImage: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/100_Yuan_Note_back.jpg/440px-100_Yuan_Note_back.jpg' },
+      { id: '9', name: '港币', code: 'HKD', faceValue: '100', version: '2020系列', circulationStatus: '正常流通', ctripAccept: '允许收兑', frontImage: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/Hong_Kong_100_dollar_note_2020.jpg/440px-Hong_Kong_100_dollar_note_2020.jpg', backImage: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f4/Hong_Kong_100_dollar_note_2020_back.jpg/440px-Hong_Kong_100_dollar_note_2020_back.jpg' },
+      { id: '10', name: '澳元', code: 'AUD', faceValue: '50', version: '第五系列', circulationStatus: '正常流通', ctripAccept: '', frontImage: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/Australian_50_dollar_note.jpg/440px-Australian_50_dollar_note.jpg', backImage: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Australian_50_dollar_note_back.jpg/440px-Australian_50_dollar_note_back.jpg' },
+      { id: '11', name: '加元', code: 'CAD', faceValue: '20', version: '2012系列', circulationStatus: '正常流通', ctripAccept: '', frontImage: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/49/Bank_of_Canada-20-2018-frontal.jpg/440px-Bank_of_Canada-20-2018-frontal.jpg', backImage: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Bank_of_Canada-20-2018-posterior.jpg/440px-Bank_of_Canada-20-2018-posterior.jpg' },
+      { id: '12', name: '瑞士法郎', code: 'CHF', faceValue: '100', version: '第九系列', circulationStatus: '正常流通', ctripAccept: '', frontImage: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/CHF_100_front.jpg/440px-CHF_100_front.jpg', backImage: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f8/CHF_100_back.jpg/440px-CHF_100_back.jpg' },
+      { id: '13', name: '韩元', code: 'KRW', faceValue: '10000', version: '2007系列', circulationStatus: '正常流通', ctripAccept: '', frontImage: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/10000-KRW-won-commemorative-banknote-2019-serial0001-front.png/440px-10000-KRW-won-commemorative-banknote-2019-serial0001-front.png', backImage: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/10000-KRW-won-commemorative-banknote-2019-serial0001-back.png/440px-10000-KRW-won-commemorative-banknote-2019-serial0001-back.png' },
+      { id: '14', name: '泰铢', code: 'THB', faceValue: '1000', version: '第十六系列', circulationStatus: '正常流通', ctripAccept: '', frontImage: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/1000_thai_baht.jpg/440px-1000_thai_baht.jpg', backImage: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/1000_thai_baht_reverse.jpg/440px-1000_thai_baht_reverse.jpg' },
+      { id: '15', name: '新加坡元', code: 'SGD', faceValue: '100', version: '第四系列', circulationStatus: '正常流通', ctripAccept: '', frontImage: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/100SingaporeDollar-2009_front.jpg/440px-100SingaporeDollar-2009_front.jpg', backImage: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/57/100SingaporeDollar-2009_back.jpg/440px-100SingaporeDollar-2009_back.jpg' },
+      { id: '16', name: '印度卢比', code: 'INR', faceValue: '500', version: '圣雄甘地系列', circulationStatus: '正常流通', ctripAccept: '', frontImage: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Indian_500_Rupee,_Mahatma_Gandhi_New_Series.jpg/440px-Indian_500_Rupee,_Mahatma_Gandhi_New_Series.jpg', backImage: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Indian_500_Rupee_reverse,_Mahatma_Gandhi_New_Series.jpg/440px-Indian_500_Rupee_reverse,_Mahatma_Gandhi_New_Series.jpg' },
+      { id: '17', name: '马来西亚林吉特', code: 'MYR', faceValue: '50', version: '第六系列', circulationStatus: '正常流通', ctripAccept: '', frontImage: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/Malaysia_50_Ringgit_2011_Front.jpg/440px-Malaysia_50_Ringgit_2011_Front.jpg', backImage: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/dc/Malaysia_50_Ringgit_2011_Back.jpg/440px-Malaysia_50_Ringgit_2011_Back.jpg' },
+      { id: '18', name: '阿联酋迪拉姆', code: 'AED', faceValue: '100', version: '2018系列', circulationStatus: '正常流通', ctripAccept: '', frontImage: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/100_UAE_Dirham_2018_front.jpg/440px-100_UAE_Dirham_2018_front.jpg', backImage: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/48/100_UAE_Dirham_2018_back.jpg/440px-100_UAE_Dirham_2018_back.jpg' },
+      { id: '19', name: '沙特里亚尔', code: 'SAR', faceValue: '100', version: '2020系列', circulationStatus: '正常流通', ctripAccept: '', frontImage: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/49/100_Saudi_Riyal.jpg/440px-100_Saudi_Riyal.jpg', backImage: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/100_Saudi_Riyal_back.jpg/440px-100_Saudi_Riyal_back.jpg' },
+      { id: '20', name: '新西兰元', code: 'NZD', faceValue: '20', version: '第五系列', circulationStatus: '正常流通', ctripAccept: '', frontImage: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/New_Zealand_20_dollar_note_2015_front.jpg/440px-New_Zealand_20_dollar_note_2015_front.jpg', backImage: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/New_Zealand_20_dollar_note_2015_back.jpg/440px-New_Zealand_20_dollar_note_2015_back.jpg' },
     ];
-
-    // 为所有货币生成占位图
-    const currencies = initialCurrencies.map(c => ({
-      ...c,
-      frontImage: generatePlaceholderImage(c),
-      backImage: generateBackPlaceholderImage(c),
-    }));
 
     const getUniqueValues = (arr, key) => ['', ...new Set(arr.map(c => c[key]))];
 
-    const Header = ({ title }) => (
-      <header className="bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
-                <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    // 头部导航
+    const Header = ({ title, onHome }) => (
+      <header className="gradient-primary text-white shadow-lg sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <button onClick={onHome} className="flex items-center gap-3 hover:opacity-90 transition-opacity">
+              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
               <div>
-                <h1 className="text-2xl font-bold">{title}</h1>
-                <p className="text-blue-100 text-sm mt-1">携程外币兑换业务支持系统</p>
+                <h1 className="text-xl font-bold">{title}</h1>
+                <p className="text-primary-100 text-xs">携程外币兑换系统</p>
               </div>
-            </div>
-            <div className="hidden md:flex items-center gap-6 text-sm">
-              <div className="text-right">
-                <p className="text-blue-100">数据更新时间</p>
+            </button>
+            <div className="hidden md:flex items-center gap-4 text-sm">
+              <div className="bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2">
+                <p className="text-primary-100">数据更新</p>
                 <p className="font-medium">{new Date().toLocaleString('zh-CN')}</p>
               </div>
             </div>
@@ -222,84 +199,105 @@
       </header>
     );
 
+    // 货币卡片
     const CurrencyCard = ({ currency, onClick }) => (
       <div 
-        className="bg-white rounded-xl shadow-card card-hover cursor-pointer overflow-hidden border border-gray-100 animate-fadeIn"
+        className="bg-white rounded-2xl shadow-soft card-hover cursor-pointer overflow-hidden border border-gray-100 animate-fadeIn"
         onClick={() => onClick(currency)}
       >
         <div className="relative aspect-[4/3] bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
           <img 
             src={currency.frontImage} 
             alt={currency.name}
-            className="w-full h-full object-contain"
+            className="w-full h-full object-contain p-4"
             loading="lazy"
+            onError={(e) => {
+              e.target.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='440' height='220' viewBox='0 0 440 220'%3E%3Crect width='440' height='220' fill='%23f97316'/%3E%3Ctext x='220' y='120' text-anchor='middle' font-family='Arial' font-size='48' fill='white'%3E${currency.code}%3C/text%3E%3C/svg%3E`;
+            }}
           />
-          <div className="absolute top-3 right-3 bg-black/70 text-white text-xs px-3 py-1.5 rounded-full font-medium backdrop-blur-sm">
+          <div className="absolute top-3 right-3 bg-gradient-to-r from-primary-500 to-primary-600 text-white text-xs px-3 py-1.5 rounded-full font-medium shadow-lg">
             {currency.code}
           </div>
-          <div className="absolute bottom-3 left-3 bg-green-600 text-white text-xs px-2 py-1 rounded-full">
+          <div className="absolute bottom-3 left-3 bg-white/90 backdrop-blur-sm text-primary-600 text-xs px-3 py-1 rounded-full font-medium shadow">
             正面
           </div>
         </div>
-        <div className="p-4">
-          <div className="flex items-start justify-between mb-2">
+        <div className="p-5">
+          <div className="flex items-start justify-between mb-3">
             <div>
               <h3 className="font-bold text-gray-900 text-lg">{currency.name}</h3>
-              <p className="text-gray-400 text-sm">{currency.code}</p>
+              <p className="text-gray-400 text-sm">{currency.code} - {currency.faceValue}</p>
             </div>
-            <span className="text-2xl font-bold text-blue-600">{currency.faceValue}</span>
+            <div className="text-right">
+              <span className="text-2xl font-bold bg-gradient-to-r from-primary-500 to-primary-600 bg-clip-text text-transparent">
+                {currency.faceValue}
+              </span>
+            </div>
           </div>
-          <p className="text-gray-500 text-sm mb-3 line-clamp-1">{currency.version}</p>
-          <div className="flex flex-wrap gap-2">
-            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+          <p className="text-gray-500 text-sm mb-4 line-clamp-1">{currency.version}</p>
+          <div className="flex flex-wrap gap-2 mb-3">
+            <span className={`px-3 py-1.5 rounded-full text-xs font-medium ${
               currency.circulationStatus === '正常流通' 
-                ? 'bg-green-100 text-green-700' 
-                : 'bg-red-100 text-red-700'
+                ? 'bg-green-50 text-green-600 border border-green-200' 
+                : 'bg-red-50 text-red-600 border border-red-200'
             }`}>
               {currency.circulationStatus}
             </span>
             {currency.ctripAccept && (
-              <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+              <span className="px-3 py-1.5 rounded-full text-xs font-medium bg-gradient-to-r from-primary-50 to-primary-100 text-primary-600 border border-primary-200">
                 {currency.ctripAccept}
               </span>
             )}
           </div>
-          <div className="flex gap-2 mt-3 pt-3 border-t border-gray-100">
+          <div className="flex gap-2 pt-3 border-t border-gray-100">
             <div className="flex-1 text-center">
-              <img src={currency.frontImage} alt="正面" className="w-full aspect-square rounded-lg object-contain border border-gray-200" />
-              <p className="text-xs text-gray-400 mt-1">正面</p>
+              <div className="w-full aspect-square rounded-xl overflow-hidden border-2 border-primary-100 p-1 bg-primary-50/50">
+                <img src={currency.frontImage} alt="正面" className="w-full h-full object-contain rounded-lg" 
+                  onError={(e) => {
+                    e.target.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f97316' rx='10'/%3E%3Ctext x='50' y='55' text-anchor='middle' font-family='Arial' font-size='24' fill='white'%3EF%3C/text%3E%3C/svg%3E`;
+                  }}
+                />
+              </div>
+              <p className="text-xs text-gray-500 mt-2 font-medium">正面</p>
             </div>
             <div className="flex-1 text-center">
-              <img src={currency.backImage} alt="背面" className="w-full aspect-square rounded-lg object-contain border border-gray-200" />
-              <p className="text-xs text-gray-400 mt-1">背面</p>
+              <div className="w-full aspect-square rounded-xl overflow-hidden border-2 border-gray-100 p-1 bg-gray-50/50">
+                <img src={currency.backImage} alt="背面" className="w-full h-full object-contain rounded-lg"
+                  onError={(e) => {
+                    e.target.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23666' rx='10'/%3E%3Ctext x='50' y='55' text-anchor='middle' font-family='Arial' font-size='24' fill='white'%3EB%3C/text%3E%3C/svg%3E`;
+                  }}
+                />
+              </div>
+              <p className="text-xs text-gray-500 mt-2 font-medium">背面</p>
             </div>
           </div>
         </div>
       </div>
     );
 
+    // 货币详情弹窗
     const CurrencyDetail = ({ currency, onClose }) => (
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn" onClick={onClose}>
-        <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden animate-scaleIn" onClick={e => e.stopPropagation()}>
-          <div className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 px-6 py-5 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn" onClick={onClose}>
+        <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden animate-scaleIn" onClick={e => e.stopPropagation()}>
+          <div className="gradient-primary px-6 py-5 flex items-center justify-between">
+            <div className="flex items-center gap-3 text-white">
+              <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-lg transition-colors">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
               <div>
-                <h2 className="text-xl font-bold text-gray-900">{currency.name}</h2>
-                <p className="text-sm text-gray-500">{currency.code} - {currency.faceValue}</p>
+                <h2 className="text-xl font-bold">{currency.name} - {currency.code}</h2>
+                <p className="text-primary-100 text-sm">{currency.version}</p>
               </div>
             </div>
           </div>
 
           <div className="p-6 overflow-y-auto max-h-[calc(90vh-100px)]">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="space-y-4">
-                <div className="bg-gray-50 rounded-xl p-5">
-                  <h4 className="text-sm font-semibold text-gray-700 mb-4">基本信息</h4>
+                <div className="bg-gradient-to-br from-primary-50 to-primary-100/50 rounded-2xl p-5 border border-primary-200">
+                  <h4 className="text-sm font-bold text-primary-600 mb-4 uppercase tracking-wide">基本信息</h4>
                   <div className="space-y-3">
                     {[
                       { label: '币种名称', value: currency.name },
@@ -307,14 +305,14 @@
                       { label: '票面金额', value: currency.faceValue },
                       { label: '版本信息', value: currency.version },
                     ].map((item, i) => (
-                      <div key={i} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
-                        <span className="text-sm text-gray-500">{item.label}</span>
-                        <span className="font-medium text-gray-900 text-sm">{item.value}</span>
+                      <div key={i} className="flex justify-between items-center py-2 border-b border-primary-100 last:border-0">
+                        <span className="text-sm text-gray-600">{item.label}</span>
+                        <span className="font-semibold text-gray-900 text-sm">{item.value}</span>
                       </div>
                     ))}
                     <div className="flex justify-between items-center py-2">
-                      <span className="text-sm text-gray-500">流通状态</span>
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      <span className="text-sm text-gray-600">流通状态</span>
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                         currency.circulationStatus === '正常流通' 
                           ? 'bg-green-100 text-green-700' 
                           : 'bg-red-100 text-red-700'
@@ -323,10 +321,10 @@
                       </span>
                     </div>
                     <div className="flex justify-between items-center py-2">
-                      <span className="text-sm text-gray-500">携程收兑</span>
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      <span className="text-sm text-gray-600">携程收兑</span>
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                         currency.ctripAccept === '允许收兑' 
-                          ? 'bg-blue-100 text-blue-700' 
+                          ? 'bg-gradient-to-r from-primary-100 to-primary-200 text-primary-700' 
                           : 'bg-gray-100 text-gray-500'
                       }`}>
                         {currency.ctripAccept || '待配置'}
@@ -337,16 +335,24 @@
               </div>
 
               <div className="space-y-4">
-                <div className="bg-gray-50 rounded-xl p-5">
-                  <h4 className="text-sm font-semibold text-gray-700 mb-3">正面样张</h4>
-                  <div className="aspect-[4/3] bg-white rounded-lg border border-gray-200 overflow-hidden">
-                    <img src={currency.frontImage} alt="正面" className="w-full h-full object-contain" />
+                <div className="bg-white rounded-2xl p-5 border-2 border-primary-200 shadow-soft">
+                  <h4 className="text-sm font-bold text-gray-700 mb-3">正面样张</h4>
+                  <div className="aspect-[4/3] bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl overflow-hidden border border-gray-200">
+                    <img src={currency.frontImage} alt="正面" className="w-full h-full object-contain p-4" 
+                      onError={(e) => {
+                        e.target.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='440' height='220' viewBox='0 0 440 220'%3E%3Crect width='440' height='220' fill='%23f97316'/%3E%3Ctext x='220' y='120' text-anchor='middle' font-family='Arial' font-size='48' fill='white'%3E${currency.code}%3C/text%3E%3C/svg%3E`;
+                      }}
+                    />
                   </div>
                 </div>
-                <div className="bg-gray-50 rounded-xl p-5">
-                  <h4 className="text-sm font-semibold text-gray-700 mb-3">背面样张</h4>
-                  <div className="aspect-[4/3] bg-white rounded-lg border border-gray-200 overflow-hidden">
-                    <img src={currency.backImage} alt="背面" className="w-full h-full object-contain" />
+                <div className="bg-white rounded-2xl p-5 border border-gray-200 shadow-soft">
+                  <h4 className="text-sm font-bold text-gray-700 mb-3">背面样张</h4>
+                  <div className="aspect-[4/3] bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl overflow-hidden border border-gray-200">
+                    <img src={currency.backImage} alt="背面" className="w-full h-full object-contain p-4"
+                      onError={(e) => {
+                        e.target.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='440' height='220' viewBox='0 0 440 220'%3E%3Crect width='440' height='220' fill='%23666'/%3E%3Ctext x='220' y='120' text-anchor='middle' font-family='Arial' font-size='48' fill='white'%3E${currency.code}%3C/text%3E%3C/svg%3E`;
+                      }}
+                    />
                   </div>
                 </div>
               </div>
@@ -356,6 +362,7 @@
       </div>
     );
 
+    // 编辑弹窗
     const CurrencyEditModal = ({ currency, onClose, onSave }) => {
       const [formData, setFormData] = useState({ ...currency });
       const frontInputRef = useRef(null);
@@ -383,85 +390,85 @@
       };
 
       return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn" onClick={onClose}>
-          <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden animate-scaleIn" onClick={e => e.stopPropagation()}>
-            <div className="bg-gradient-to-r from-blue-50 to-white border-b border-gray-200 px-6 py-5">
-              <div className="flex items-center gap-3">
-                <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                  <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn" onClick={onClose}>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden animate-scaleIn" onClick={e => e.stopPropagation()}>
+            <div className="gradient-primary px-6 py-5">
+              <div className="flex items-center gap-3 text-white">
+                <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-lg transition-colors">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
-                <h2 className="text-xl font-bold text-gray-900">{currency.id ? '编辑货币信息' : '新增货币'}</h2>
+                <h2 className="text-xl font-bold">{currency.id ? '编辑货币信息' : '新增货币'}</h2>
               </div>
             </div>
 
             <form onSubmit={handleSubmit} className="p-6 overflow-y-auto max-h-[calc(90vh-100px)]">
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-5">
+                <div className="grid grid-cols-2 gap-5">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">币种名称</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">币种名称</label>
                     <input
                       type="text"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">币种代码</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">币种代码</label>
                     <input
                       type="text"
                       value={formData.code}
                       onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                      className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
                       required
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-5">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">票面金额</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">票面金额</label>
                     <input
                       type="text"
                       value={formData.faceValue}
                       onChange={(e) => setFormData({ ...formData, faceValue: e.target.value })}
-                      className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">版本信息</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">版本信息</label>
                     <input
                       type="text"
                       value={formData.version}
                       onChange={(e) => setFormData({ ...formData, version: e.target.value })}
-                      className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
                       required
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-5">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">流通状态</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">流通状态</label>
                     <select
                       value={formData.circulationStatus}
                       onChange={(e) => setFormData({ ...formData, circulationStatus: e.target.value })}
-                      className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
                     >
                       <option value="正常流通">正常流通</option>
                       <option value="停止流通">停止流通</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">携程收兑</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">携程收兑</label>
                     <select
                       value={formData.ctripAccept}
                       onChange={(e) => setFormData({ ...formData, ctripAccept: e.target.value })}
-                      className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
                     >
                       <option value="">待配置</option>
                       <option value="允许收兑">允许收兑</option>
@@ -470,9 +477,16 @@
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-5">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">正面图片（点击上传真实图片）</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">正面图片URL</label>
+                    <input
+                      type="text"
+                      value={formData.frontImage}
+                      onChange={(e) => setFormData({ ...formData, frontImage: e.target.value })}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
+                      placeholder="输入图片URL"
+                    />
                     <input
                       type="file"
                       accept="image/*"
@@ -482,14 +496,21 @@
                     />
                     <div 
                       onClick={() => frontInputRef.current.click()}
-                      className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors"
+                      className="mt-2 border-2 border-dashed border-primary-300 rounded-xl p-4 text-center cursor-pointer hover:border-primary-500 hover:bg-primary-50 transition-colors"
                     >
-                      <img src={formData.frontImage} alt="正面预览" className="w-full h-32 object-contain rounded" />
-                      <p className="text-xs text-gray-500 mt-2">点击更换图片</p>
+                      <img src={formData.frontImage} alt="正面预览" className="w-full h-32 object-contain rounded-lg" />
+                      <p className="text-xs text-gray-500 mt-2">点击上传本地图片</p>
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">背面图片（点击上传真实图片）</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">背面图片URL</label>
+                    <input
+                      type="text"
+                      value={formData.backImage}
+                      onChange={(e) => setFormData({ ...formData, backImage: e.target.value })}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
+                      placeholder="输入图片URL"
+                    />
                     <input
                       type="file"
                       accept="image/*"
@@ -499,26 +520,26 @@
                     />
                     <div 
                       onClick={() => backInputRef.current.click()}
-                      className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors"
+                      className="mt-2 border-2 border-dashed border-primary-300 rounded-xl p-4 text-center cursor-pointer hover:border-primary-500 hover:bg-primary-50 transition-colors"
                     >
-                      <img src={formData.backImage} alt="背面预览" className="w-full h-32 object-contain rounded" />
-                      <p className="text-xs text-gray-500 mt-2">点击更换图片</p>
+                      <img src={formData.backImage} alt="背面预览" className="w-full h-32 object-contain rounded-lg" />
+                      <p className="text-xs text-gray-500 mt-2">点击上传本地图片</p>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-200">
+              <div className="flex justify-end gap-3 mt-6 pt-6 border-t-2 border-gray-100">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-6 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                  className="px-6 py-3 text-sm font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
                 >
                   取消
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+                  className="px-6 py-3 text-sm font-medium text-white gradient-primary rounded-xl hover:opacity-90 transition-opacity shadow-lg"
                 >
                   保存
                 </button>
@@ -529,45 +550,90 @@
       );
     };
 
-    const FilterSection = ({ filters, onFilterChange, currencies }) => (
-      <div className="bg-white rounded-xl shadow-card p-5 border border-gray-100">
-        <div className="flex items-center gap-2 mb-4">
-          <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-          </svg>
-          <span className="font-semibold text-gray-900">筛选条件</span>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          {[
-            { key: 'name', label: '币种名称', options: getUniqueValues(currencies, 'name') },
-            { key: 'code', label: '币种代码', options: getUniqueValues(currencies, 'code') },
-            { key: 'faceValue', label: '票面金额', options: getUniqueValues(currencies, 'faceValue') },
-            { key: 'version', label: '版本', options: getUniqueValues(currencies, 'version') },
-            { key: 'circulationStatus', label: '流通状态', options: ['', '正常流通', '停止流通'] },
-            { key: 'ctripAccept', label: '携程收兑', options: ['', '允许收兑', ''] },
-          ].map(filter => (
-            <div key={filter.key}>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{filter.label}</label>
-              <select
-                value={filters[filter.key]}
-                onChange={(e) => onFilterChange(filter.key, e.target.value)}
-                className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-              >
-                {filter.options.map(opt => (
-                  <option key={opt} value={opt}>{opt || '请选择'}</option>
-                ))}
-              </select>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
+    // 筛选区域
+    const FilterSection = ({ filters, onFilterChange, currencies }) => {
+      const uniqueNames = getUniqueValues(currencies, 'name');
+      const uniqueCodes = getUniqueValues(currencies, 'code');
+      const uniqueValues = getUniqueValues(currencies, 'faceValue');
+      const uniqueVersions = getUniqueValues(currencies, 'version');
 
+      return (
+        <div className="bg-white rounded-2xl shadow-soft p-6 border border-gray-100 animate-slideUp">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-10 h-10 gradient-primary rounded-xl flex items-center justify-center shadow-lg">
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+              </svg>
+            </div>
+            <div>
+              <span className="font-bold text-gray-900 text-lg">筛选条件</span>
+              <p className="text-gray-500 text-sm">支持模糊搜索和快速选择</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <ComboboxFilter
+              label="币种名称"
+              value={filters.name}
+              onChange={(val) => onFilterChange('name', val)}
+              options={uniqueNames}
+              placeholder="选择或搜索..."
+            />
+            <ComboboxFilter
+              label="币种代码"
+              value={filters.code}
+              onChange={(val) => onFilterChange('code', val)}
+              options={uniqueCodes}
+              placeholder="选择或搜索..."
+            />
+            <ComboboxFilter
+              label="票面金额"
+              value={filters.faceValue}
+              onChange={(val) => onFilterChange('faceValue', val)}
+              options={uniqueValues}
+              placeholder="选择或搜索..."
+            />
+            <ComboboxFilter
+              label="版本"
+              value={filters.version}
+              onChange={(val) => onFilterChange('version', val)}
+              options={uniqueVersions}
+              placeholder="选择或搜索..."
+            />
+            <ComboboxFilter
+              label="流通状态"
+              value={filters.circulationStatus}
+              onChange={(val) => onFilterChange('circulationStatus', val)}
+              options={['', '正常流通', '停止流通']}
+              placeholder="选择..."
+            />
+            <ComboboxFilter
+              label="携程收兑"
+              value={filters.ctripAccept}
+              onChange={(val) => onFilterChange('ctripAccept', val)}
+              options={['', '允许收兑', '不允许收兑', '待配置']}
+              placeholder="选择..."
+            />
+          </div>
+        </div>
+      );
+    };
+
+    // 数据管理表格
     const AdminTable = ({ currencies, onView, onEdit, onDelete, onAdd }) => (
-      <div className="bg-white rounded-xl shadow-card border border-gray-100 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-          <h3 className="font-semibold text-gray-900">数据管理</h3>
-          <button onClick={onAdd} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium flex items-center gap-2">
+      <div className="bg-white rounded-2xl shadow-soft border border-gray-100 overflow-hidden animate-fadeIn">
+        <div className="px-6 py-5 border-b-2 border-gray-100 flex items-center justify-between bg-gradient-to-r from-primary-50 to-primary-100/50">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 gradient-primary rounded-xl flex items-center justify-center shadow-lg">
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="font-bold text-gray-900 text-lg">数据管理</h3>
+              <p className="text-gray-500 text-sm">共 {currencies.length} 条记录</p>
+            </div>
+          </div>
+          <button onClick={onAdd} className="px-5 py-2.5 gradient-primary text-white rounded-xl hover:opacity-90 transition-opacity text-sm font-semibold shadow-lg flex items-center gap-2">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>
@@ -578,30 +644,34 @@
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">序号</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">预览</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">币种名称</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">代码</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">面值</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">流通状态</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">携程收兑</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">操作</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">序号</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">预览</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">币种名称</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">代码</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">面值</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">流通状态</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">携程收兑</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">操作</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {currencies.map((currency, index) => (
-                <tr key={currency.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 text-sm text-gray-500">{index + 1}</td>
+                <tr key={currency.id} className="hover:bg-primary-50/30 transition-colors">
+                  <td className="px-6 py-4 text-sm text-gray-500 font-medium">{index + 1}</td>
                   <td className="px-6 py-4">
-                    <img src={currency.frontImage} alt="" className="w-12 h-8 rounded object-contain border border-gray-200" />
+                    <img src={currency.frontImage} alt="" className="w-14 h-10 rounded-lg object-cover border-2 border-gray-200 shadow-sm" 
+                      onError={(e) => {
+                        e.target.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='60' viewBox='0 0 100 60'%3E%3Crect width='100' height='60' fill='%23f97316' rx='5'/%3E%3Ctext x='50' y='35' text-anchor='middle' font-family='Arial' font-size='16' fill='white'%3E${currency.code}%3C/text%3E%3C/svg%3E`;
+                      }}
+                    />
                   </td>
                   <td className="px-6 py-4">
-                    <span className="font-medium text-gray-900">{currency.name}</span>
+                    <span className="font-semibold text-gray-900">{currency.name}</span>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-900 font-mono">{currency.code}</td>
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900">{currency.faceValue}</td>
+                  <td className="px-6 py-4 text-sm font-bold text-primary-600 font-mono">{currency.code}</td>
+                  <td className="px-6 py-4 text-sm font-bold text-gray-900">{currency.faceValue}</td>
                   <td className="px-6 py-4">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                    <span className={`px-3 py-1.5 rounded-full text-xs font-semibold ${
                       currency.circulationStatus === '正常流通' 
                         ? 'bg-green-100 text-green-700' 
                         : 'bg-red-100 text-red-700'
@@ -611,25 +681,25 @@
                   </td>
                   <td className="px-6 py-4">
                     {currency.ctripAccept ? (
-                      <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">{currency.ctripAccept}</span>
+                      <span className="px-3 py-1.5 rounded-full text-xs font-semibold bg-gradient-to-r from-primary-100 to-primary-200 text-primary-700">{currency.ctripAccept}</span>
                     ) : (
-                      <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500">待配置</span>
+                      <span className="px-3 py-1.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-500">待配置</span>
                     )}
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex gap-1">
-                      <button onClick={() => onView(currency)} className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="查看">
+                      <button onClick={() => onView(currency)} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors" title="查看">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                         </svg>
                       </button>
-                      <button onClick={() => onEdit(currency)} className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors" title="编辑">
+                      <button onClick={() => onEdit(currency)} className="p-2 text-green-500 hover:bg-green-50 rounded-lg transition-colors" title="编辑">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
                       </button>
-                      <button onClick={() => onDelete(currency.id)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="删除">
+                      <button onClick={() => onDelete(currency.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="删除">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
@@ -646,7 +716,7 @@
 
     const App = () => {
       const [currentPage, setCurrentPage] = useState('home');
-      const [currenciesState, setCurrenciesState] = useState(currencies);
+      const [currenciesState, setCurrenciesState] = useState(initialCurrencies);
       const [filters, setFilters] = useState({
         name: '', code: '', faceValue: '',
         version: '', circulationStatus: '', ctripAccept: '',
@@ -679,8 +749,6 @@
           const newCurrency = {
             ...updatedCurrency,
             id: Date.now().toString(),
-            frontImage: generatePlaceholderImage(updatedCurrency),
-            backImage: generateBackPlaceholderImage(updatedCurrency),
           };
           setCurrenciesState(prevCurrencies => [...prevCurrencies, newCurrency]);
           alert('货币已添加！');
@@ -688,7 +756,7 @@
       };
 
       const handleDeleteCurrency = (id) => {
-        if (window.confirm('确定要删除这条货币记录吗？')) {
+        if (window.confirm('确定要删除这条货币记录吗？此操作不可撤销！')) {
           setCurrenciesState(prevCurrencies => prevCurrencies.filter(c => c.id !== id));
           alert('货币已删除！');
         }
@@ -710,67 +778,68 @@
       };
 
       return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-gradient-to-br from-gray-50 via-primary-50/30 to-gray-50">
           {currentPage === 'home' ? (
-            <div className="bg-gradient-to-br from-blue-50 via-white to-blue-50 min-h-screen flex items-center justify-center p-8">
-              <div className="max-w-4xl w-full">
-                <div className="text-center mb-12 animate-slideUp">
-                  <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
-                    <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="min-h-screen flex items-center justify-center p-8">
+              <div className="max-w-5xl w-full">
+                <div className="text-center mb-16 animate-slideUp">
+                  <div className="w-24 h-24 gradient-primary rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-lg">
+                    <svg className="w-14 h-14 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </div>
-                  <h1 className="text-4xl font-bold text-gray-900 mb-4">货币大全</h1>
+                  <h1 className="text-5xl font-bold text-gray-900 mb-4 tracking-tight">货币大全</h1>
+                  <p className="text-gray-500 text-lg">快速查询全球货币信息 · 携程外币兑换业务支持系统</p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-slideUp" style={{ animationDelay: '0.1s' }}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-slideUp" style={{ animationDelay: '0.1s' }}>
                   <button 
                     onClick={() => setCurrentPage('query')}
-                    className="bg-white rounded-2xl shadow-card p-8 hover:shadow-card-hover transition-all duration-300 text-left group border border-gray-100"
+                    className="bg-white rounded-3xl shadow-soft p-10 hover:shadow-lg transition-all duration-300 text-left group border-2 border-transparent hover:border-primary-200"
                   >
-                    <div className="flex items-center gap-5">
-                      <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
-                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="flex items-center gap-6">
+                      <div className="w-20 h-20 gradient-primary rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
+                        <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                       </div>
                       <div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-2">货币查询</h3>
-                        <p className="text-gray-500 text-sm leading-relaxed">按币种名称、三字码、面值、版本等多维度查询货币信息</p>
+                        <h3 className="text-2xl font-bold text-gray-900 mb-3">货币查询</h3>
+                        <p className="text-gray-500 leading-relaxed">按币种名称、三字码、面值、版本等多维度查询货币信息，支持模糊搜索</p>
                       </div>
                     </div>
                   </button>
 
                   <button 
                     onClick={() => setCurrentPage('admin')}
-                    className="bg-white rounded-2xl shadow-card p-8 hover:shadow-card-hover transition-all duration-300 text-left group border border-gray-100"
+                    className="bg-white rounded-3xl shadow-soft p-10 hover:shadow-lg transition-all duration-300 text-left group border-2 border-transparent hover:border-green-200"
                   >
-                    <div className="flex items-center gap-5">
-                      <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
-                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="flex items-center gap-6">
+                      <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
+                        <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
                         </svg>
                       </div>
                       <div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-2">数据管理</h3>
-                        <p className="text-gray-500 text-sm leading-relaxed">维护货币数据，支持添加、编辑、删除操作，上传真实图片</p>
+                        <h3 className="text-2xl font-bold text-gray-900 mb-3">数据管理</h3>
+                        <p className="text-gray-500 leading-relaxed">维护货币数据，支持添加、编辑、删除操作，上传真实图片</p>
                       </div>
                     </div>
                   </button>
                 </div>
 
-                <div className="mt-12 text-center text-sm text-gray-400 animate-slideUp" style={{ animationDelay: '0.2s' }}>
-                  <p>© 2024 携程外币兑换系统 - 货币大全 v1.0</p>
+                <div className="mt-20 text-center text-sm text-gray-400 animate-slideUp" style={{ animationDelay: '0.2s' }}>
+                  <p>© 2024 携程外币兑换系统 - 货币大全 v2.0</p>
                 </div>
               </div>
             </div>
           ) : (
             <>
-              <Header title="货币大全" />
+              <Header title="货币大全" onHome={() => setCurrentPage('home')} />
 
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="flex gap-3 mb-6">
-                  <button onClick={() => setCurrentPage('home')} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-2">
+                  <button onClick={() => setCurrentPage('home')} className="px-4 py-2 text-sm text-gray-600 hover:bg-primary-50 rounded-xl transition-colors flex items-center gap-2 font-medium">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                     </svg>
@@ -778,16 +847,16 @@
                   </button>
                   <button 
                     onClick={() => setCurrentPage('query')}
-                    className={`px-4 py-2 text-sm rounded-lg transition-colors font-medium ${
-                      currentPage === 'query' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'
+                    className={`px-5 py-2 text-sm rounded-xl transition-colors font-semibold ${
+                      currentPage === 'query' ? 'gradient-primary text-white shadow-lg' : 'text-gray-600 hover:bg-primary-50'
                     }`}
                   >
                     查询页面
                   </button>
                   <button 
                     onClick={() => setCurrentPage('admin')}
-                    className={`px-4 py-2 text-sm rounded-lg transition-colors font-medium ${
-                      currentPage === 'admin' ? 'bg-green-100 text-green-700' : 'text-gray-600 hover:bg-gray-100'
+                    className={`px-5 py-2 text-sm rounded-xl transition-colors font-semibold ${
+                      currentPage === 'admin' ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg' : 'text-gray-600 hover:bg-green-50'
                     }`}
                   >
                     数据管理
@@ -797,7 +866,7 @@
                 <FilterSection filters={filters} onFilterChange={handleFilterChange} currencies={currenciesState} />
 
                 {currentPage === 'admin' && (
-                  <div className="mt-6 animate-slideUp">
+                  <div className="mt-6 animate-fadeIn">
                     <AdminTable 
                       currencies={filteredCurrencies} 
                       onView={setSelectedCurrency}
@@ -809,11 +878,11 @@
                 )}
 
                 {currentPage === 'query' && (
-                  <div className="bg-white rounded-xl shadow-card border border-gray-100 mt-6 overflow-hidden">
-                    <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                  <div className="bg-white rounded-2xl shadow-soft border border-gray-100 mt-6 overflow-hidden animate-fadeIn">
+                    <div className="px-6 py-5 border-b-2 border-gray-100 flex items-center justify-between bg-gradient-to-r from-primary-50 to-primary-100/50">
                       <div className="flex items-center gap-3">
-                        <span className="font-semibold text-gray-900">查询结果</span>
-                        <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+                        <span className="font-bold text-gray-900 text-lg">查询结果</span>
+                        <span className="px-4 py-1.5 gradient-primary text-white rounded-full text-sm font-semibold shadow-lg">
                           {filteredCurrencies.length} 条记录
                         </span>
                       </div>
@@ -821,13 +890,14 @@
 
                     <div className="p-6">
                       {filteredCurrencies.length === 0 ? (
-                        <div className="text-center py-16">
-                          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="text-center py-20">
+                          <div className="w-20 h-20 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg className="w-10 h-10 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                           </div>
-                          <p className="text-gray-500">暂无匹配的货币数据</p>
+                          <p className="text-gray-500 text-lg mb-2">暂无匹配的货币数据</p>
+                          <p className="text-gray-400 text-sm">请调整筛选条件后重试</p>
                         </div>
                       ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
