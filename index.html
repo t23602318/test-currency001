@@ -80,7 +80,7 @@
     const { useState, useMemo, useRef, useEffect } = React;
 
     // 组合筛选组件 - 支持手动选择和模糊搜索
-    const ComboboxFilter = ({ label, value, onChange, options, placeholder }) => {
+    const ComboboxFilter = ({ label, value, onChange, options, placeholder, disabled }) => {
       const [isOpen, setIsOpen] = useState(false);
       const [searchTerm, setSearchTerm] = useState('');
       const wrapperRef = useRef(null);
@@ -105,10 +105,14 @@
         <div ref={wrapperRef} className="relative">
           <label className="block text-sm font-medium text-gray-700 mb-2">{label}</label>
           <div 
-            className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm cursor-pointer hover:border-primary-400 transition-colors flex items-center justify-between"
-            onClick={() => setIsOpen(!isOpen)}
+            className={`w-full px-3 py-2.5 border rounded-lg text-sm flex items-center justify-between transition-colors ${
+              disabled 
+                ? 'bg-gray-100 border-gray-200 cursor-not-allowed text-gray-400' 
+                : 'bg-white border-gray-200 cursor-pointer hover:border-primary-400'
+            }`}
+            onClick={() => !disabled && setIsOpen(!isOpen)}
           >
-            <span className={value ? 'text-gray-900' : 'text-gray-400'}>
+            <span className={value && !disabled ? 'text-gray-900' : 'text-gray-400'}>
               {value || placeholder}
             </span>
             <svg className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -5978,8 +5982,35 @@
     const FilterSection = ({ filters, onFilterChange, currencies }) => {
       const uniqueNames = getUniqueValues(currencies, 'name');
       const uniqueCodes = getUniqueValues(currencies, 'code');
-      const uniqueValues = getUniqueValues(currencies, 'faceValue');
-      const uniqueVersions = getUniqueValues(currencies, 'version');
+
+      const filteredByCurrency = currencies.filter(currency => {
+        if (filters.name && !currency.name.includes(filters.name)) return false;
+        if (filters.code && !currency.code.toLowerCase().includes(filters.code.toLowerCase())) return false;
+        return true;
+      });
+
+      const uniqueValues = getUniqueValues(filteredByCurrency, 'faceValue');
+      const uniqueVersions = getUniqueValues(filteredByCurrency, 'version');
+
+      const handleNameChange = (val) => {
+        onFilterChange('name', val);
+        if (val && filters.faceValue) {
+          onFilterChange('faceValue', '');
+        }
+        if (val && filters.version) {
+          onFilterChange('version', '');
+        }
+      };
+
+      const handleCodeChange = (val) => {
+        onFilterChange('code', val);
+        if (val && filters.faceValue) {
+          onFilterChange('faceValue', '');
+        }
+        if (val && filters.version) {
+          onFilterChange('version', '');
+        }
+      };
 
       return (
         <div className="bg-white rounded-2xl shadow-soft p-6 border border-gray-100 animate-slideUp">
@@ -5991,21 +6022,21 @@
             </div>
             <div>
               <span className="font-bold text-gray-900 text-lg">筛选条件</span>
-              <p className="text-gray-500 text-sm">支持模糊搜索和快速选择</p>
+              <p className="text-gray-500 text-sm">支持模糊搜索和快速选择，票面金额、版本与币种联动</p>
             </div>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             <ComboboxFilter
               label="币种名称"
               value={filters.name}
-              onChange={(val) => onFilterChange('name', val)}
+              onChange={handleNameChange}
               options={uniqueNames}
               placeholder="选择或搜索..."
             />
             <ComboboxFilter
               label="币种代码"
               value={filters.code}
-              onChange={(val) => onFilterChange('code', val)}
+              onChange={handleCodeChange}
               options={uniqueCodes}
               placeholder="选择或搜索..."
             />
@@ -6015,6 +6046,7 @@
               onChange={(val) => onFilterChange('faceValue', val)}
               options={uniqueValues}
               placeholder="选择或搜索..."
+              disabled={!filters.name && !filters.code}
             />
             <ComboboxFilter
               label="版本"
@@ -6022,6 +6054,7 @@
               onChange={(val) => onFilterChange('version', val)}
               options={uniqueVersions}
               placeholder="选择或搜索..."
+              disabled={!filters.name && !filters.code}
             />
             <ComboboxFilter
               label="流通状态"
