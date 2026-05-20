@@ -73,9 +73,26 @@
       background-clip: text;
     }
   </style>
+  <style>
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
 </head>
 <body class="bg-gradient-to-br from-slate-50 via-white to-slate-100">
-  <div id="root"></div>
+  <noscript>
+    <div style="padding: 50px; text-align: center; font-size: 24px; color: #2563eb;">
+      请启用JavaScript以查看此页面
+    </div>
+  </noscript>
+  <div id="root" style="min-height: 100vh;">
+    <div style="padding: 100px 20px; text-align: center; background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #3b82f6 100%); color: white; border-radius: 0 0 50% 50%; margin-bottom: 40px;">
+      <h1 style="font-size: 36px; font-weight: bold; margin-bottom: 10px;">🌍 货币大全</h1>
+      <p style="font-size: 20px; opacity: 0.9;">携程外币兑换系统</p>
+      <p style="font-size: 18px; margin-top: 20px; opacity: 0.8;">正在加载应用...</p>
+      <div style="margin-top: 30px;">
+        <div style="display: inline-block; width: 50px; height: 50px; border: 5px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+      </div>
+    </div>
+  </div>
   <script type="text/babel">
     const { useState, useMemo, useRef, useEffect } = React;
 
