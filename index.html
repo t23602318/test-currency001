@@ -5598,7 +5598,21 @@
   }
 ];
 
-    const getUniqueValues = (arr, key) => ['', ...new Set(arr.map(c => c[key]))];
+    const getUniqueValues = (arr, key) => {
+      try {
+        if (!arr || !Array.isArray(arr)) return [''];
+        const values = arr.map(c => {
+          if (c && typeof c === 'object' && key in c) {
+            return String(c[key]);
+          }
+          return '';
+        }).filter(v => v && v.trim());
+        return ['', ...new Set(values)];
+      } catch (e) {
+        console.error('getUniqueValues error:', e);
+        return [''];
+      }
+    };
 
     // 头部导航
     const Header = ({ title, onHome }) => (
@@ -6173,7 +6187,14 @@
 
     const App = () => {
       const [currentPage, setCurrentPage] = useState('home');
-      const [currenciesState, setCurrenciesState] = useState(initialCurrencies);
+      const [currenciesState, setCurrenciesState] = useState(() => {
+        try {
+          return initialCurrencies;
+        } catch (e) {
+          console.error('初始化货币数据失败:', e);
+          return [];
+        }
+      });
       const [filters, setFilters] = useState({
         name: '', code: '', faceValue: '',
         version: '', circulationStatus: '', ctripAccept: '',
@@ -6183,15 +6204,24 @@
       const [isAddingNew, setIsAddingNew] = useState(false);
 
       const filteredCurrencies = useMemo(() => {
-        return currenciesState.filter(currency => {
-          if (filters.name && !currency.name.includes(filters.name)) return false;
-          if (filters.code && !currency.code.toLowerCase().includes(filters.code.toLowerCase())) return false;
-          if (filters.faceValue && !currency.faceValue.includes(filters.faceValue)) return false;
-          if (filters.version && !currency.version.includes(filters.version)) return false;
-          if (filters.circulationStatus && currency.circulationStatus !== filters.circulationStatus) return false;
-          if (filters.ctripAccept && currency.ctripAccept !== filters.ctripAccept) return false;
-          return true;
-        });
+        try {
+          if (!currenciesState || !Array.isArray(currenciesState)) {
+            return [];
+          }
+          return currenciesState.filter(currency => {
+            if (!currency || typeof currency !== 'object') return false;
+            if (filters.name && currency.name && !currency.name.includes(filters.name)) return false;
+            if (filters.code && currency.code && !currency.code.toLowerCase().includes(filters.code.toLowerCase())) return false;
+            if (filters.faceValue && currency.faceValue && !currency.faceValue.includes(filters.faceValue)) return false;
+            if (filters.version && currency.version && !currency.version.includes(filters.version)) return false;
+            if (filters.circulationStatus && currency.circulationStatus !== filters.circulationStatus) return false;
+            if (filters.ctripAccept && currency.ctripAccept !== filters.ctripAccept) return false;
+            return true;
+          });
+        } catch (e) {
+          console.error('筛选货币数据失败:', e);
+          return currenciesState || [];
+        }
       }, [currenciesState, filters]);
 
       const handleFilterChange = (key, value) => setFilters(prev => ({ ...prev, [key]: value }));
@@ -6397,17 +6427,25 @@
 
     function renderApp() {
       try {
-        if (window.React && window.ReactDOM) {
-          if (ReactDOM.createRoot) {
-            ReactDOM.createRoot(document.getElementById('root')).render(<App />);
-          } else {
-            ReactDOM.render(<App />, document.getElementById('root'));
-          }
-        } else {
+        if (!window.React || !window.ReactDOM) {
           console.error('React或ReactDOM未加载');
+          return;
+        }
+        
+        var rootElement = document.getElementById('root');
+        if (!rootElement) {
+          console.error('root元素不存在');
+          return;
+        }
+
+        if (ReactDOM.createRoot) {
+          ReactDOM.createRoot(rootElement).render(<App />);
+        } else {
+          ReactDOM.render(<App />, rootElement);
         }
       } catch (e) {
         console.error('React渲染失败:', e);
+        console.error('错误详情:', e.message, e.stack);
         if (typeof window !== 'undefined') {
           window.appRenderError = e;
         }
@@ -6420,24 +6458,33 @@
       var isAndroid = ua.indexOf('android') > -1;
       var isiOS = ua.indexOf('iphone') > -1 || ua.indexOf('ipad') > -1;
 
-      var delay = 0;
+      var delay = 100;
       if (isWeChat) {
-        delay = 300;
+        delay = 500;
       }
       if (isAndroid) {
-        delay = Math.max(delay, 200);
+        delay = Math.max(delay, 300);
       }
 
-      setTimeout(function() {
+      var retries = 0;
+      var maxRetries = 3;
+
+      function tryRender() {
         if (document.readyState === 'complete') {
           renderApp();
+        } else if (retries < maxRetries) {
+          retries++;
+          setTimeout(tryRender, delay * retries);
         } else {
-          document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(renderApp, 100);
-          });
-          window.addEventListener('load', renderApp);
+          console.error('超过最大重试次数，无法渲染应用');
         }
-      }, delay);
+      }
+
+      setTimeout(tryRender, delay);
+      document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(renderApp, 100);
+      });
+      window.addEventListener('load', renderApp);
     }
 
     safeRender();
